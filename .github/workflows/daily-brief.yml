@@ -1,0 +1,34 @@
+name: Daily Zero100 supply-chain brief
+
+on:
+  schedule:
+    # 04:00 America/Phoenix. Arizona does not observe daylight saving, so this is 11:00 UTC year-round.
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install feedparser reportlab
+      - name: Build brief
+        run: python scripts/generate_brief.py
+      - name: Commit brief
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add briefs
+          if git diff --staged --quiet; then
+            echo "No brief changes to commit."
+          else
+            git commit -m "brief: $(date -u +%F) supply-chain scan"
+            git push
+          fi
